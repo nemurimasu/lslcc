@@ -62,4 +62,9 @@
       </manifest>
     </jar>
   </target>
+  <target name="clean">
+    <delete dir="gen"/>
+    <delete dir="bin"/>
+    <delete file="lslcc.jar"/>
+  </target>
 </project>
