@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="lslcc" default="jar" basedir=".">
+  <target name="checkantlr">
+    <uptodate property="guptodate">
+      <srcfiles dir="./" includes="src/*.g"/>
+      <compositemapper>
+        <globmapper from="src/*.g" to="gen/org/lslcc/antlr/*.tokens"/>
+        <globmapper from="src/*.g" to="gen/org/lslcc/antlr/*Lexer.java"/>
+        <globmapper from="src/*.g" to="gen/org/lslcc/antlr/*Parser.java"/>
+      </compositemapper>
+    </uptodate>
+  </target>
+  <target name="antlr" depends="checkantlr" unless="guptodate">
+    <mkdir dir="gen/org/lslcc/antlr"/>
+    <echo message="Running antlr"/>
+    <java jar="lib/antlr-3.2.jar" fork="true">
+      <arg value="-o"/>
+      <arg file="gen/org/lslcc/antlr"/>
+      <arg file="src/Lsl.g"/>
+    </java>
+  </target>
+  <target name="checkjrubyc">
+    <uptodate property="ruptodate">
+      <srcfiles dir="./" includes="src/*.rb"/>
+      <compositemapper>
+        <globmapper from="src/*.rb" to="bin/org/lslcc/*.class"/>
+      </compositemapper>
+    </uptodate>
+  </target>
+  <target name="jrubyc" depends="checkjrubyc" unless="ruptodate">
+    <mkdir dir="gen/org/lslcc"/>
+    <echo message="Running jrubyc"/>
+    <java jar="lib/jruby-complete-1.5.1.jar" fork="true">
+      <arg value="-S"/>
+      <arg value="jrubyc"/>
+      <arg value="-p"/>
+      <arg value="org/lslcc"/>
+      <arg value="-c"/>
+      <arg value="lib/antlr-3.2.jar:gen"/>
+      <arg value="-d"/>
+      <arg value="src"/>
+      <arg value="-t"/>
+      <arg value="bin"/>
+      <arg value="src"/>
+    </java>
+  </target>
+
+  <target name="javac" depends="antlr">
+    <mkdir dir="bin"/>
+    <javac classpath="lib/antlr-3.2.jar;lib/jruby-complete-1.5.1.jar" destdir="bin">
+      <src path="gen"/>
+      <src path="src"/>
+      <include name="**/*.java"/>
+    </javac>
+  </target>
+
+  <target name="jar" depends="javac,jrubyc">
+    <jar destfile="lslcc.jar" basedir="bin">
+      <manifest>
+        <attribute name="main-class" value="org.lslcc.Lslcc"/>
+        <attribute name="class-path" value="antlr-3.2.jar lib/antlr-3.2.jar jruby-complete-1.5.1.jar lib/jruby-complete-1.5.1.jar"/>
+      </manifest>
+    </jar>
+  </target>
+</project>
