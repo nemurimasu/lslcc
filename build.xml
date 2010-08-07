@@ -13,7 +13,7 @@
   <target name="antlr" depends="checkantlr" unless="guptodate">
     <mkdir dir="gen/org/lslcc/antlr"/>
     <echo message="Running antlr"/>
-    <java jar="lib/antlr-3.2.jar" fork="true">
+    <java jar="lib/antlr-3.2.jar" fork="true" failonerror="true">
       <arg value="-o"/>
       <arg file="gen/org/lslcc/antlr"/>
       <arg file="src/Lsl.g"/>
@@ -30,7 +30,7 @@
   <target name="jrubyc" depends="checkjrubyc" unless="ruptodate">
     <mkdir dir="gen/org/lslcc"/>
     <echo message="Running jrubyc"/>
-    <java jar="lib/jruby-complete-1.5.1.jar" fork="true">
+    <java jar="lib/jruby-complete-1.5.1.jar" fork="true" failonerror="true">
       <arg value="-S"/>
       <arg value="jrubyc"/>
       <arg value="-p"/>
