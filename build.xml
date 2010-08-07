@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="lslcc" default="jar" basedir=".">
+  <target name="paths">
+    <path id="lib">
+      <fileset dir="lib">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+    <path id="antlr">
+      <fileset dir="lib">
+        <include name="antlr*.jar"/>
+      </fileset>
+    </path>
+    <path id="jruby">
+      <fileset dir="lib">
+        <include name="jruby*.jar"/>
+      </fileset>
+    </path>
+  </target>
   <target name="checkantlr">
     <uptodate property="guptodate">
       <srcfiles dir="./" includes="src/*.g"/>
@@ -10,10 +27,10 @@
       </compositemapper>
     </uptodate>
   </target>
-  <target name="antlr" depends="checkantlr" unless="guptodate">
+  <target name="antlr" depends="paths,checkantlr" unless="guptodate">
     <mkdir dir="gen/org/lslcc/antlr"/>
     <echo message="Running antlr"/>
-    <java jar="lib/antlr-3.2.jar" fork="true" failonerror="true">
+    <java jar="${toString:antlr}" fork="true" failonerror="true">
       <arg value="-o"/>
       <arg file="gen/org/lslcc/antlr"/>
       <arg file="src/Lsl.g"/>
@@ -27,16 +44,16 @@
       </compositemapper>
     </uptodate>
   </target>
-  <target name="jrubyc" depends="checkjrubyc" unless="ruptodate">
+  <target name="jrubyc" depends="paths,checkjrubyc,antlr" unless="ruptodate">
     <mkdir dir="gen/org/lslcc"/>
     <echo message="Running jrubyc"/>
-    <java jar="lib/jruby-complete-1.5.1.jar" fork="true" failonerror="true">
+    <java jar="${toString:jruby}" fork="true" failonerror="true">
       <arg value="-S"/>
       <arg value="jrubyc"/>
       <arg value="-p"/>
       <arg value="org/lslcc"/>
       <arg value="-c"/>
-      <arg value="lib/antlr-3.2.jar:gen"/>
+      <arg value="${toString:antlr}:gen"/>
       <arg value="-d"/>
       <arg value="src"/>
       <arg value="-t"/>
@@ -47,7 +64,8 @@
 
   <target name="javac" depends="antlr">
     <mkdir dir="bin"/>
-    <javac classpath="lib/antlr-3.2.jar;lib/jruby-complete-1.5.1.jar" destdir="bin">
+    <javac destdir="bin">
+      <classpath path="${lib}"/>
       <src path="gen"/>
       <src path="src"/>
       <include name="**/*.java"/>
@@ -55,10 +73,16 @@
   </target>
 
   <target name="jar" depends="javac,jrubyc">
+    <pathconvert property="cp" refid="lib" pathsep=" ">
+      <compositemapper>
+        <globmapper from="*" to="*"/>
+        <globmapper from="*" to="lib/*"/>
+      </compositemapper>
+    </pathconvert>
     <jar destfile="lslcc.jar" basedir="bin">
       <manifest>
         <attribute name="main-class" value="org.lslcc.Lslcc"/>
-        <attribute name="class-path" value="antlr-3.2.jar lib/antlr-3.2.jar jruby-complete-1.5.1.jar lib/jruby-complete-1.5.1.jar"/>
+        <attribute name="class-path" value="${cp}"/>
       </manifest>
     </jar>
   </target>
