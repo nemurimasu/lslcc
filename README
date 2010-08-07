@@ -1,0 +1,10 @@
+Currently this program takes LSL files named on the command line, parses them,
+and outputs them to standard out without comments or indentation. Basically, an
+LSL un-beautifier. Expressions are, AFAIK, the only things not properly parsed
+into trees.
+
+The idea is that single LSL scripts will be optimized, multiple LSL scripts will
+be merged into fewer scripts, and (hopefully) scripts written in Ruby(?) will be
+compiled into LSL.
+
+Uses ANTLR for the parsing and JRuby for everything else.
