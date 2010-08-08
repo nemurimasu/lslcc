@@ -46,6 +46,13 @@ package org.lslcc.antlr;
 package org.lslcc.antlr;
 }
 
+@lexer::members {
+  @Override
+  public void reportError(RecognitionException e) {
+    super.reportError(e);
+    throw new Error(e);
+  }
+}
 
 INTEGER_TYPE : 'integer' ;
 FLOAT_TYPE : 'float' ;
