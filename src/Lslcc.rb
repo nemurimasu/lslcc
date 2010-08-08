@@ -326,6 +326,40 @@ module Lsl
       "[#{values.join(', ')}]"
     end
   end
+
+  class Vector < Node
+    node_accessor :values
+    def to_s
+      "<#{values.join(', ')}>"
+    end
+    def x
+      values[0]
+    end
+    def x=( value )
+      values[0] = value
+    end
+    def y
+      values[1]
+    end
+    def y=( value )
+      values[1] = value
+    end
+    def z
+      values[2]
+    end
+    def z=( value )
+      values[2] = value
+    end
+  end
+
+  class Quaternion < Vector
+    def s
+      values[3]
+    end
+    def s=( value )
+      values[3] = value
+    end
+  end
 end
 
 class LslTreeAdaptor < CommonTreeAdaptor
