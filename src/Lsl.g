@@ -96,7 +96,7 @@ FLOAT
     ;
 
 COMMENT
-    :   '//' (~('\n')* ~('\n'|'\r')) '\r'? '\n' {$channel=HIDDEN;}
+    :   '//' (~('\n')* ~('\n'|'\r'))? '\r'? '\n' {$channel=HIDDEN;}
     |   '/*' ( options {greedy=false;} : . )* '*/' {$channel=HIDDEN;}
     ;
 
