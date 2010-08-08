@@ -14,6 +14,7 @@ tokens {
 	VALUE;
 	GLOBALS;
 	PARAMS;
+	EVENTS;
 	PARAM;
 	TYPE;
 	NAME;
@@ -29,8 +30,8 @@ tokens {
 	CALL;
 	CAST;
 	FOR;
-	PRECOMMAND;
-	LOOPCOMMAND;
+	PRECOMMANDS;
+	LOOPCOMMANDS;
 	EXPRESSION;
 	WHILE;
 	LIST;
@@ -138,8 +139,8 @@ optionalType : typename | -> VOID ;
 functionParameters : functionParameter (',' functionParameter)* -> functionParameter+ ;
 functionParameter : nameType -> ^(PARAM nameType) ;
 states : defaultState state* -> ^(STATES defaultState state*) ;
-defaultState : DEFAULT_KEY '{' stateBody '}' -> ^(STATE ^(NAME DEFAULT_KEY) ^(BODY stateBody)) ;
-state : STATE_KEY IDENTIFIER '{' stateBody '}' -> ^(STATE ^(NAME IDENTIFIER) ^(BODY stateBody)) ;
+defaultState : DEFAULT_KEY '{' stateBody '}' -> ^(STATE ^(NAME DEFAULT_KEY) ^(EVENTS stateBody)) ;
+state : STATE_KEY IDENTIFIER '{' stateBody '}' -> ^(STATE ^(NAME IDENTIFIER) ^(EVENTS stateBody)) ;
 stateBody : event* ;
 event : IDENTIFIER '(' functionParameters? ')' compoundStatement -> ^(FUNCTION ^(TYPE VOID) ^(NAME IDENTIFIER) ^(PARAMS functionParameters?) compoundStatement) ;
 compoundStatement : '{' statement* '}' -> ^(BODY statement*) ;
@@ -151,8 +152,8 @@ statement : ';'
 	| expression ';' -> ^(EXPRESSION expression)
 	| declaration ';' -> declaration
 	| compoundStatement
-	| IF_KEY '(' expression ')' statement (ELSE_KEY statement)? -> ^(IF ^(CONDITION expression) ^(BODY statement) ^(ELSE statement?))
-	| FOR_KEY '(' forexpressionlista? ';' expression ';' forexpressionlistb? ')' statement -> ^(FOR ^(PRECOMMAND forexpressionlista?) ^(CONDITION expression) ^(LOOPCOMMAND forexpressionlistb?) ^(BODY statement))
+	| IF_KEY '(' expression ')' statement (ELSE_KEY statement)? -> ^(IF ^(CONDITION expression) ^(BODY statement) ^(ELSE ^(BODY statement?)))
+	| FOR_KEY '(' forexpressionlista? ';' expression ';' forexpressionlistb? ')' statement -> ^(FOR ^(PRECOMMANDS forexpressionlista?) ^(CONDITION expression) ^(LOOPCOMMANDS forexpressionlistb?) ^(BODY statement))
 	| DO_KEY statement WHILE_KEY '(' expression ')' ';' -> ^(DO ^(BODY statement) ^(CONDITION expression))
 	| WHILE_KEY '(' expression ')' statement -> ^(WHILE ^(CONDITION expression) ^(BODY statement)) ;
 declaration : nameType -> ^(VARIABLE nameType)
