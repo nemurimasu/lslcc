@@ -108,7 +108,7 @@ class LslTree < CommonTree
     return case children.length
       when 0 then self.text
       when 1 then children.first.convert
-      else raise "collection of child nodes(#{o.inspect}) inside unknown node #{self.text}"
+      else raise "collection of child nodes(#{children.inspect}) inside unknown node #{self.text}"
     end
   end
 
