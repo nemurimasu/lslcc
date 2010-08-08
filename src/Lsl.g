@@ -153,6 +153,7 @@ event : IDENTIFIER '(' functionParameters? ')' compoundStatement -> ^(FUNCTION ^
 compoundStatement : '{' statement* '}' -> ^(BODY statement*) ;
 statement : ';'
 	| STATE_KEY IDENTIFIER ';' -> ^(STATE_CHANGE IDENTIFIER)
+	| STATE_KEY DEFAULT_KEY ';' -> ^(STATE_CHANGE DEFAULT_KEY)
 	| JUMP_KEY IDENTIFIER ';' -> ^(JUMP IDENTIFIER)
 	| '@' IDENTIFIER ';' -> ^(LABEL IDENTIFIER)
 	| RETURN_KEY expexpression? ';' -> ^(RETURN expexpression?)
