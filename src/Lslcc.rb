@@ -12,31 +12,27 @@ java_import 'org.antlr.runtime.tree.CommonTree'
 java_import 'org.lslcc.antlr.LslLexer'
 java_import 'org.lslcc.antlr.LslParser'
 
-# like attr_accessor, except that it sets @parent in the value assigned
-def node_accessor( *symbols )
-  # set the @parent variable in a node, or all the nodes in an array
-  def set_parent(n, p)
-    if n.respond_to? :parent
-      n.instance_variable_set(:@parent, p)
-    elsif n.kind_of? Enumerable and not n.kind_of? String
-      # String is Enumerable, and returns String when Enumerated, causing
-      # infinite recursion D:
-      n.each {|nn| set_parent(nn, p)}
-    end
+class Array
+  def parent=( value )
+    self.each {|nn| nn.parent = value if nn.respond_to? :parent= }
   end
+end
+
+# like attr_accessor, except that it sets parent in the value assigned
+def node_accessor( *symbols )
   attr_accessor(*symbols)
   symbols.each do |sym|
     define_method("#{sym}=".to_sym) do |value|
       isym = "@#{sym}".to_sym
-      # if there is already a value, set that value's @parent to nil
-      if instance_variable_defined? isym
+      # if there is already a value, set that value's parent to nil
+      if respond_to? sym
         old = instance_variable_get(isym)
-        set_parent(old, nil) if old
+        old.parent = old if old and old.respond_to? :parent=
       end
       # set our new value
       instance_variable_set(isym, value)
-      # set the new value's @parent to self
-      set_parent(value, self) if value
+      # set the new value's parent to self
+      value.parent = self if value and value.respond_to? :parent=
     end
   end
 end
@@ -146,7 +142,25 @@ end
 module Lsl
   # all nodes should have a parent field
   class Node
-    attr_reader :parent
+    attr_accessor :parent
+
+    def initialize( vars = {} )
+      if vars.kind_of? Hash
+        vars.keys.each do |k|
+          sym = "#{k}=".to_sym
+          __send__(sym, vars[k]) if respond_to? sym
+        end
+      elsif vars.kind_of? Array and respond_to? :values=
+        self.values = vars
+      else
+        self.value = vars
+      end
+    end
+
+    # override this in nodes that can contain functions
+    def all_functions
+      return []
+    end
   end
 
   class Type < Node
@@ -178,6 +192,9 @@ module Lsl
     def to_s
       "#{globals.join("\n")}\n#{states.join("\n")}"
     end
+    def all_functions
+      return ((globals + states).map {|g| g.all_functions}).flatten!(1)
+    end
   end
 
   class Variable < Node
@@ -195,6 +212,10 @@ module Lsl
       ret = ''
       ret = "#{type} " unless type.is_void?
       ret += "#{name}(#{params.join(', ')})\n#{body}"
+    end
+
+    def all_functions
+      return [self]
     end
   end
 
@@ -216,6 +237,9 @@ module Lsl
     node_accessor :name, :events
     def to_s
       "#{name} {\n#{events.join("\n")}\n}"
+    end
+    def all_functions
+      return events
     end
   end
 
@@ -265,12 +289,16 @@ module Lsl
 
   class Body < Node
     node_accessor :values
-    def initialize
-      @values = []
+    def initialize( vars = [] )
+      super
     end
     def to_s
       return values.first.to_s if values.length == 1 and (parent.kind_of? Body or values.first.kind_of? Body)
       "{\n#{values.join("\n")}\n}"
+    end
+    def insert( index, value )
+      value.parent = self if value and value.respond_to? :parent=
+      values.insert(index, value)
     end
   end
 
@@ -278,7 +306,6 @@ module Lsl
     node_accessor :condition, :body, :else
     def to_s
       s = "if (#{condition})\n#{self.body}\nelse\n"
-      #raise "#{self.else.class} #{self.else.to_s}"
       if self.else then
         s += self.else.to_s
       else
@@ -384,6 +411,9 @@ class Lslcc
       grammar.set_tree_adaptor(LslTreeAdaptor.new)
       ret = grammar.lscriptProgram
       tree = ret.tree.convert
+      tree.all_functions.each do |f|
+        f.body.insert(0, Lsl::Expression.new([Lsl::Call.new({:name => 'llOwnerSay', :params => ["\"Entering #{f.name}\""]})]))
+      end
       puts tree
     end
   end
