@@ -1,7 +1,6 @@
 Currently this program takes LSL files named on the command line, parses them,
 does some processing on them and outputs them to standard out without comments
-or indentation. Expressions are, AFAIK, the only things not properly parsed
-into trees.
+or indentation.
 
 The processing done consists of:
  * adding a llOwnerSay("Entering <function name>"); to the start of every
