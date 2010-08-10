@@ -378,7 +378,7 @@ module Lsl
 
   class Expression < Value
     def to_s
-      s = super.to_s
+      s = super
       s += ';' if parent.kind_of? Body
       s = "(#{s})" if parent.kind_of? Value
       s
