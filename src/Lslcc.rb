@@ -227,9 +227,50 @@ module Lsl
   end
 
   class Value < Node
-    node_accessor :values
+    node_accessor :left, :right, :center
+    Precedences = [['=', '+=', '-=', '*=', '/=', '%='], ['||'], ['&&'], ['|'], ['^'], ['&'], ['==', '!='], ['<', '<=', '>', '>='], ['<<', '>>'], ['+', '-'], ['*', '/', '%'], ['.']] # http://lslwiki.net/lslwiki/wakka.php?wakka=LSL101Chapter4/show&time=2008-09-25+16%3A15%3A07
+    # expressions coming in from Antlr are not in proper trees
+    def values=( values )
+      if values.empty?
+        raise "values is empty(syntax gap >.<)"
+        self.center = ''
+        return
+      end
+      if values.length == 1
+        self.center = values.first
+        return
+      end
+      Precedences.each do |level|
+        values.length.times do |i|
+          if level.include? values[i] then
+            if i > 0
+              if i == 1 and values.first.kind_of? Value
+                self.left = values.first
+              else
+                self.left = Value.new(values[0...i])
+              end
+            end
+            if i + 1 < values.length
+              if i + 2 == values.length and values.last.kind_of? Value
+                self.right = values.last
+              else
+                self.right = Value.new(values[0...i])
+              end
+            end
+            self.center = values[i]
+            return
+          end
+        end
+      end
+      p values.map { |v| case v.class.to_s; when 'String' then v; else v.class; end }
+      raise 'partial value(syntax gap >.<)'
+    end
     def to_s
-      values.join(' ')
+      r = "#{center}"
+      r = "#{left}#{r}" if left
+      r = "#{r}#{right}" if right
+      r = "(#{r})" if left or right
+      return r
     end
   end
 
@@ -385,6 +426,20 @@ module Lsl
     end
     def s=( value )
       values[3] = value
+    end
+  end
+
+  class PreMod < Node
+    node_accessor :operator, :value
+    def to_s
+      "#{operator}#{value}"
+    end
+  end
+
+  class PostMod < Node
+    node_accessor :operator, :value
+    def to_s
+      "#{value}#{operator}"
     end
   end
 end

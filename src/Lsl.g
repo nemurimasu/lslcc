@@ -38,6 +38,9 @@ tokens {
 	DO;
 	VECTOR;
 	QUATERNION;
+	PRE_MOD;
+	POST_MOD;
+	OPERATOR;
 }
 @header {
 package org.lslcc.antlr;
@@ -133,8 +136,8 @@ globalVariable : nameType ';' -> ^(VARIABLE nameType)
 simpleAssignable : simpleAssignableNoList | listConstant ;
 simpleAssignableNoList : IDENTIFIER | constant | specialConstant ;
 constant : integerConstant | fpConstant | STRING ;
-fpConstant : FLOAT | '-' FLOAT ;
-integerConstant : INT | '-' INT ;
+fpConstant : FLOAT | '-' FLOAT -> ^(PRE_MOD ^(OPERATOR '-') ^(VALUE FLOAT));
+integerConstant : INT | '-' INT -> ^(PRE_MOD ^(OPERATOR '-') ^(VALUE INT));
 specialConstant : '<' simpleAssignable ',' simpleAssignable ',' simpleAssignable '>' -> ^(VECTOR ^(VALUE simpleAssignable) ^(VALUE simpleAssignable) ^(VALUE simpleAssignable))
 	| '<' simpleAssignable ',' simpleAssignable ',' simpleAssignable ',' simpleAssignable '>' -> ^(QUATERNION ^(VALUE simpleAssignable) ^(VALUE simpleAssignable) ^(VALUE simpleAssignable) ^(VALUE simpleAssignable)) ;
 listConstant : '[' listEntry? ']' -> ^(LIST listEntry?);
@@ -176,15 +179,23 @@ expexpression : expression -> ^(EXPRESSION expression) ;
 valexpression : expression -> ^(VALUE expression) ;
 operator : EQ | NEQ | LEQ | GEQ | '<' | '>' | '+' | '-' | '*' | '/' | '%' | '&' | '|' | '^' | BOOLEAN_AND | BOOLEAN_OR | SHIFT_LEFT | SHIFT_RIGHT;
 assignment : ('=' | ADD_ASSIGN | SUB_ASSIGN | MUL_ASSIGN | DIV_ASSIGN | MOD_ASSIGN);
-expression : (unaryexpression | lvalue assignment expression) (operator expression)*;
+lexpression : unaryexpression
+	| lvalue assignment expression -> ^(EXPRESSION lvalue assignment expression) ; // this rewrite puts parenthesis around assignments because they should be left to right
+expression : lexpression (operator expression)*;
 unaryop : '-' | '!' | '~' ;
-unaryexpression : unaryop expression
-	| (INC_OP | DEC_OP) lvalue
+modop : INC_OP | DEC_OP ;
+unaryexpression : unaryop expression -> ^(PRE_MOD ^(OPERATOR unaryop) ^(VALUE expression))
+	| modop lvalue -> ^(PRE_MOD ^(OPERATOR modop) ^(VALUE lvalue))
 	| typecast
 	| unarypostfixexpression
 	| '(' expression ')' -> ^(EXPRESSION expression) ;
-	typecast : '(' typename ')' expression -> ^(CAST ^(TYPE typename) ^(VALUE expression)) ;
-unarypostfixexpression : specialInitializer | listInitializer | lvalue (INC_OP | DEC_OP)? | IDENTIFIER '(' funcexpressionlist? ')' -> ^(CALL ^(NAME IDENTIFIER) ^(PARAMS funcexpressionlist?)) | constant ;
+typecast : '(' typename ')' expression -> ^(CAST ^(TYPE typename) ^(VALUE expression)) ;
+unarypostfixexpression : specialInitializer
+	| listInitializer
+	| lvalue modop -> ^(POST_MOD ^(VALUE lvalue) ^(OPERATOR modop))
+	| lvalue
+	| IDENTIFIER '(' funcexpressionlist? ')' -> ^(CALL ^(NAME IDENTIFIER) ^(PARAMS funcexpressionlist?))
+	| constant ;
 specialInitializer : '<' valexpression ',' valexpression ',' valexpression '>' -> ^(VECTOR valexpression valexpression valexpression)
 	| '<' valexpression ',' valexpression ',' valexpression ',' valexpression '>' -> ^(QUATERNION valexpression valexpression valexpression valexpression) ;
 listInitializer : '[' listexpressionlist? ']' -> ^(LIST listexpressionlist?) ;
