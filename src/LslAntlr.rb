@@ -1,5 +1,12 @@
 #!/usr/bin/env jruby
 
+java_import 'org.antlr.runtime.ANTLRFileStream'
+java_import 'org.antlr.runtime.TokenRewriteStream'
+java_import 'org.antlr.runtime.tree.CommonTreeAdaptor'
+java_import 'org.antlr.runtime.tree.CommonTree'
+java_import 'org.lslcc.antlr.LslLexer'
+java_import 'org.lslcc.antlr.LslParser'
+
 module LslAntlr
   # the tree class used by Antlr
   class LslTree < CommonTree
@@ -84,11 +91,11 @@ module LslAntlr
           # get classes
           lsl_constants = Lsl.constants
           # get all constants from LslParser(might be token names)
-          LslParser.constants.each do |constant|
+          Java::org::lslcc::antlr::LslParser.constants.each do |constant|
             # convert CONSTANT_NAME to field_name and ClassName
             fieldname = constant.downcase
             clsname = fieldname.split('_').each{|part| part.capitalize!}.join
-            value = LslParser.const_get(constant)
+            value = Java::org::lslcc::antlr::LslParser.const_get(constant)
             next unless value.kind_of? Fixnum
             @@namemap[value] = fieldname
             # check for existance
@@ -111,6 +118,16 @@ module LslAntlr
       # JRuby doesn't work for LslTree.new(nil)
       # these nodes all get deleted before the tree leaves Antlr anyway
       return CommonTree.new(token)
+    end
+  end
+
+  class LslParser
+    def initialize( file )
+      @grammar = Java::org::lslcc::antlr::LslParser.new(TokenRewriteStream.new(LslLexer.new(ANTLRFileStream.new(file, 'utf-8'))))
+      @grammar.tree_adaptor = LslTreeAdaptor.new
+    end
+    def method_missing( id )
+      @grammar.__send__(id).tree.convert
     end
   end
 end
