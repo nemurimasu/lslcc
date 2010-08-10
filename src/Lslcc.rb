@@ -459,7 +459,7 @@ class Lslcc
   java_signature 'void main(String[])'
   def self.main(args)
     args.each do |file|
-      puts file
+      puts file if args.length > 1
       lex = LslLexer.new(ANTLRFileStream.new(file, 'utf-8'))
       tokens = TokenRewriteStream.new(lex)
       grammar = LslParser.new(tokens)
