@@ -1,7 +1,5 @@
 #!/usr/bin/env jruby
 
-include Java
-
 require 'LslNodes.rb'
 require 'LslAntlr.rb'
 

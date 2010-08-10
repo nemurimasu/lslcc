@@ -1,5 +1,7 @@
 #!/usr/bin/env jruby
 
+include Java
+
 java_import 'org.antlr.runtime.ANTLRFileStream'
 java_import 'org.antlr.runtime.TokenRewriteStream'
 java_import 'org.antlr.runtime.tree.CommonTreeAdaptor'
